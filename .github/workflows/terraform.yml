@@ -9,6 +9,7 @@ on:
 env:
   AWS_REGION: us-west-2
   NODE_VERSION: '18'
+  TERRAFORM_WORKING_DIR: './terraform'  # Add this line to specify Terraform directory
 
 jobs:
   build-and-deploy:
@@ -27,12 +28,15 @@ jobs:
 
     - name: Install dependencies
       run: npm ci
-
+    
     #- name: Run tests
     #  run: npm test
 
     - name: Build Lambda function
       run: npm run build
+
+    - name: Copy function.zip to Terraform directory
+      run: cp function.zip ${{ env.TERRAFORM_WORKING_DIR }}/
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -45,12 +49,14 @@ jobs:
       uses: hashicorp/setup-terraform@v2
 
     - name: Terraform Init
+      working-directory: ${{ env.TERRAFORM_WORKING_DIR }}
       run: terraform init
 
     - name: Terraform Plan
+      if: github.event_name == 'pull_request'
+      working-directory: ${{ env.TERRAFORM_WORKING_DIR }}
       id: plan
       run: terraform plan -no-color
-      if: github.event_name == 'pull_request'
 
     - name: Update Pull Request
       uses: actions/github-script@v6
@@ -79,4 +85,5 @@ jobs:
 
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      working-directory: ${{ env.TERRAFORM_WORKING_DIR }}
       run: terraform apply -auto-approve
