@@ -1,3 +1,33 @@
+# Configure AWS Provider
+provider "aws" {
+  region = "us-west-2"  # Change to your desired region
+}
+
+# Lambda IAM Role
+resource "aws_iam_role" "lambda_role" {
+  name = "scheduled_lambda_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# Lambda basic execution policy attachment
+resource "aws_iam_role_policy_attachment" "lambda_basic" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  role       = aws_iam_role.lambda_role.name
+}
+
+# Lambda function
 resource "aws_lambda_function" "scheduled_lambda" {
   filename         = "function.zip"
   function_name    = "scheduled_task"
@@ -19,4 +49,64 @@ resource "aws_lambda_function" "scheduled_lambda" {
 resource "aws_cloudwatch_log_group" "lambda_logs" {
   name              = "/aws/lambda/${aws_lambda_function.scheduled_lambda.function_name}"
   retention_in_days = 14
+}
+
+# EventBridge Scheduler Role
+resource "aws_iam_role" "scheduler_role" {
+  name = "eventbridge_scheduler_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "scheduler.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# EventBridge Scheduler policy to invoke Lambda
+resource "aws_iam_role_policy" "scheduler_lambda_policy" {
+  name = "scheduler_lambda_policy"
+  role = aws_iam_role.scheduler_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "lambda:InvokeFunction"
+        ]
+        Resource = [
+          aws_lambda_function.scheduled_lambda.arn
+        ]
+      }
+    ]
+  })
+}
+
+# EventBridge Scheduler
+resource "aws_scheduler_schedule" "lambda_schedule" {
+  name       = "lambda_schedule"
+  group_name = "default"
+
+  flexible_time_window {
+    mode = "OFF"
+  }
+
+  schedule_expression = "cron(0 12 * * ? *)"  # Runs daily at 12:00 PM UTC
+
+  target {
+    arn      = aws_lambda_function.scheduled_lambda.arn
+    role_arn = aws_iam_role.scheduler_role.arn
+
+    input = jsonencode({
+      detail = "Scheduled execution"
+    })
+  }
 }
