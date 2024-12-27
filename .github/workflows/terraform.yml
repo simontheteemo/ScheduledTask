@@ -9,7 +9,7 @@ on:
 env:
   AWS_REGION: us-west-2
   NODE_VERSION: '18'
-  TERRAFORM_WORKING_DIR: './terraform'  # Add this line to specify Terraform directory
+  TERRAFORM_WORKING_DIR: './terraform'
 
 jobs:
   build-and-deploy:
@@ -24,13 +24,6 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-    
-    #- name: Run tests
-    #  run: npm test
 
     - name: Build Lambda function
       run: npm run build
@@ -48,40 +41,15 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
 
-    - name: Terraform Init
+    - name: Terraform Init with backend
       working-directory: ${{ env.TERRAFORM_WORKING_DIR }}
-      run: terraform init
+      run: terraform init -backend=true
 
     - name: Terraform Plan
-      if: github.event_name == 'pull_request'
       working-directory: ${{ env.TERRAFORM_WORKING_DIR }}
       id: plan
       run: terraform plan -no-color
-
-    - name: Update Pull Request
-      uses: actions/github-script@v6
       if: github.event_name == 'pull_request'
-      env:
-        PLAN: "${{ steps.plan.outputs.stdout }}"
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          const output = `#### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
-          
-          <details><summary>Show Plan</summary>
-          
-          \`\`\`\n
-          ${process.env.PLAN}
-          \`\`\`
-          
-          </details>`;
-          
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: output
-          })
 
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
