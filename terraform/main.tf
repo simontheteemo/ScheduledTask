@@ -1,19 +1,6 @@
 # Configure AWS Provider
 provider "aws" {
-  region = "us-west-2"  # Change to your desired region
-}
-
-# S3 bucket for Terraform state
-resource "aws_s3_bucket" "terraform_state" {
-  bucket = "scheduled-task-state-bucket"
-}
-
-# Enable versioning for state files
-resource "aws_s3_bucket_versioning" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
-  versioning_configuration {
-    status = "Enabled"
-  }
+  region = "us-west-2"
 }
 
 # Lambda IAM Role
