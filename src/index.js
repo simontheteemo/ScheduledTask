@@ -1,17 +1,6 @@
-const winston = require('winston');
-
-// Configure logger
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  transports: [
-    new winston.transports.Console()
-  ]
-});
-
 exports.handler = async (event, context) => {
   try {
-    logger.info('Processing scheduled event', { 
+    console.info('Processing scheduled event', { 
       timestamp: new Date().toISOString(),
       event 
     });
@@ -27,7 +16,7 @@ exports.handler = async (event, context) => {
       })
     };
   } catch (error) {
-    logger.error('Error processing scheduled task', { 
+    console.error('Error processing scheduled task', { 
       error: error.message,
       stack: error.stack 
     });
@@ -38,10 +27,10 @@ exports.handler = async (event, context) => {
 
 async function processScheduledTask() {
   // Implement your task logic here
-  logger.info('Starting task processing');
+  console.info('Starting task processing');
   
   // Example: Add your business logic here
   await new Promise(resolve => setTimeout(resolve, 100));
   
-  logger.info('Task processing completed');
+  console.info('Task processing completed');
 }
