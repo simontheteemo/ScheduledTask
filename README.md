@@ -1,5 +1,11 @@
 # ScheduledTask
-Using AWS scheduler to trigger lambda task on CRON base.
+
+- A Node.js Lambda function triggered by EventBridge Scheduler
+- Infrastructure as code using Terraform
+- CI/CD pipeline with GitHub Actions
+- State management using S3 backend
+- CloudWatch logging for monitoring
+
 
 Prerequisites
 - Deployment role need to have permission to manage resources
