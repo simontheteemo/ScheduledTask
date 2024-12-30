@@ -37,6 +37,8 @@ resource "aws_lambda_function" "scheduled_lambda" {
   timeout         = 30
   memory_size     = 128
 
+  source_code_hash = filebase64sha256("function.zip")
+
   environment {
     variables = {
       NODE_ENV = "production"
