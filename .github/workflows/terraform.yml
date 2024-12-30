@@ -49,7 +49,6 @@ jobs:
       working-directory: ${{ env.TERRAFORM_WORKING_DIR }}
       id: plan
       run: terraform plan -no-color
-      if: github.event_name == 'pull_request'
 
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
